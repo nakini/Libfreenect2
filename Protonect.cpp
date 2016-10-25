@@ -364,7 +364,7 @@ int main(int argc, char *argv[])
     // Save into opencv containers.
     cv::Mat(rgb->height, rgb->width, CV_8UC4, rgb->data).copyTo(rgbMat);
     cv::Mat(ir->height, ir->width, CV_32FC1, ir->data).copyTo(irMat);
-    cv::Mat(depth->height, depth->width, CV_32FC1, depth->data).copyTo(depthMat);   
+    cv::Mat(depth->height, depth->width, CV_16UC1, depth->data).copyTo(depthMat);   
 
 
     // Display the images.
@@ -380,7 +380,7 @@ int main(int argc, char *argv[])
     }
     
     // Copy the undistorted depth
-    cv::Mat(undistorted.height, undistorted.width, CV_32FC1, undistorted.data).copyTo(depthUndistortMat);
+    cv::Mat(undistorted.height, undistorted.width, CV_16UC1, undistorted.data).copyTo(depthUndistortMat);
     // Display undistorted peth.
 //    cv::imshow("Undistorted", depthUndistortMat / 4096.0f);    
 
