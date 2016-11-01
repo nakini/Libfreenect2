@@ -43,7 +43,7 @@
 
 // OpenCV header files.
 #include <opencv2/opencv.hpp>
-#include <opencv2/highgui.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 
 bool protonect_shutdown = false; ///< Whether the running application should shut down.
