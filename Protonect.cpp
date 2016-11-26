@@ -380,8 +380,10 @@ int main(int argc, char *argv[])
     }
     
     // Copy the undistorted depth
-    cv::Mat(undistorted.height, undistorted.width, CV_16UC1, undistorted.data).copyTo(depthUndistortMat);
-    // Display undistorted peth.
+    //cv::Mat(undistorted.height, undistorted.width, CV_16UC1, undistorted.data).copyTo(depthUndistortMat);
+	// DON'T COPY THE MATRIX DIRECTLY INTO THE ANOTHER ONE. The "undistorted" matrix is having 4-bytes/pixel. If we copy it into a matrix of type Unsigned-16 then it corrupts the data in the default conversion process.
+	undistorted.convertTo(depthUndistortMat, CV_16UC1, 1); 
+   // Display undistorted peth.
 //    cv::imshow("Undistorted", depthUndistortMat / 4096.0f);    
 
     // Image names
