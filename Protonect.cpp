@@ -390,13 +390,19 @@ int main(int argc, char *argv[])
     // Image names
     char depthImgName[100];
     char rgbImgName[100];
+	char rawDepthName[100];
 
     sprintf(depthImgName, "%s/depthImg_%04d.png", dirDestination.c_str(), framecount);
     sprintf(rgbImgName, "%s/rgbImg_%04d.jpg", dirDestination.c_str(), framecount);
+    sprintf(rawDepthName, "%s/rawDepth_%04d.depth", dirDestination.c_str(), framecount);
 
     // Save the image
     cv::imwrite(depthImgName, depthUndistortMat);
     cv::imwrite(rgbImgName, rgbMat);    
+	FILE *pFile;
+	pFile = fopen(rawDepthName, "wb");
+	fwrite(undistorted.data, undistorted.bytes_per_pixel, undistorted.width*undistorted.height, pFile);
+	fclose(pFile);
 
     // Increment the frame count
     framecount++;
