@@ -397,8 +397,13 @@ int main(int argc, char *argv[])
     sprintf(rawDepthName, "%s/rawDepth_%04d.depth", dirDestination.c_str(), framecount);
 
     // Save the image
-    cv::imwrite(depthImgName, depthUndistortMat);
-    cv::imwrite(rgbImgName, rgbMat);    
+    //cv::imwrite(depthImgName, depthUndistortMat);
+    //cv::imwrite(rgbImgName, rgbMat);    
+	cv::Mat depthUndistortMatFlip, rgbMatFlip;
+	flip(depthUndistortMat, depthUndistortMatFlip, 1);
+	flip(rgbMat, rgbMatFlip, 1);
+    cv::imwrite(depthImgName, depthUndistortMatFlip);
+    cv::imwrite(rgbImgName, rgbMatFlip);    
 	FILE *pFile;
 	pFile = fopen(rawDepthName, "wb");
 	fwrite(undistorted.data, undistorted.bytes_per_pixel, undistorted.width*undistorted.height, pFile);
