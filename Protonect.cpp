@@ -384,6 +384,7 @@ int main(int argc, char *argv[])
     cv::Mat(undistorted.height, undistorted.width, CV_32F, undistorted.data).copyTo(depthUndistortMat);
 	// DON'T COPY THE MATRIX DIRECTLY INTO THE ANOTHER ONE. The "undistorted" matrix is having 4-bytes/pixel. If we copy it into a matrix of type Unsigned-16 then it corrupts the data in the default conversion process.
 	depthUndistortMat.convertTo(depthUndistortMat, CV_16UC1, 1); 
+
    // Display undistorted peth.
     //cv::imshow("Undistorted", depthUndistortMat / 4096.0f);    
 
@@ -391,19 +392,27 @@ int main(int argc, char *argv[])
     char depthImgName[100];
     char rgbImgName[100];
 	char rawDepthName[100];
+	char irImgName[100];
 
     sprintf(depthImgName, "%s/depthImg_%04d.png", dirDestination.c_str(), framecount);
     sprintf(rgbImgName, "%s/rgbImg_%04d.jpg", dirDestination.c_str(), framecount);
     sprintf(rawDepthName, "%s/rawDepth_%04d.depth", dirDestination.c_str(), framecount);
+    sprintf(irImgName, "%s/irImg_%04d.png", dirDestination.c_str(), framecount);
 
     // Save the image
     //cv::imwrite(depthImgName, depthUndistortMat);
     //cv::imwrite(rgbImgName, rgbMat);    
-	cv::Mat depthUndistortMatFlip, rgbMatFlip;
+	
+	// For some reason the images are flipped along Y-axis. So we have to perform a manual flip on them again.
+	cv::Mat depthUndistortMatFlip, rgbMatFlip, irMatFlip;
 	flip(depthUndistortMat, depthUndistortMatFlip, 1);
 	flip(rgbMat, rgbMatFlip, 1);
+	flip(irMat, irMatFlip, 1);
     cv::imwrite(depthImgName, depthUndistortMatFlip);
     cv::imwrite(rgbImgName, rgbMatFlip);    
+    cv::imwrite(irImgName, irMatFlip);    
+	
+	// Write the depth values into a binary file.
 	FILE *pFile;
 	pFile = fopen(rawDepthName, "wb");
 	fwrite(undistorted.data, undistorted.bytes_per_pixel, undistorted.width*undistorted.height, pFile);
