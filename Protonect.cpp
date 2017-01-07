@@ -348,6 +348,7 @@ int main(int argc, char *argv[])
     // OpenCV Containers
     cv::Mat rgbMat, depthMat, irMat;
 	cv::Mat depthUndistortMat(424, 512, CV_32F, 0.0);		// Save undistorted matrix.
+	cv::Mat irUndistortMat(424, 512, CV_32F, 0.0);			// Save undistorted matrix.
 /// [loop start]
   while(!protonect_shutdown && (framemax == (size_t)-1 || framecount < framemax))
   {
@@ -382,8 +383,10 @@ int main(int argc, char *argv[])
     // Copy the undistorted depth
     //cv::Mat(undistorted.height, undistorted.width, CV_16UC1, undistorted.data).copyTo(depthUndistortMat);
     cv::Mat(undistorted.height, undistorted.width, CV_32F, undistorted.data).copyTo(depthUndistortMat);
+    cv::Mat(ir->height, ir->width, CV_32F, ir->data).copyTo(irUndistortMat);
 	// DON'T COPY THE MATRIX DIRECTLY INTO THE ANOTHER ONE. The "undistorted" matrix is having 4-bytes/pixel. If we copy it into a matrix of type Unsigned-16 then it corrupts the data in the default conversion process.
 	depthUndistortMat.convertTo(depthUndistortMat, CV_16UC1, 1); 
+	irUndistortMat.convertTo(irUndistortMat, CV_16UC1, 1); 
 
    // Display undistorted peth.
     //cv::imshow("Undistorted", depthUndistortMat / 4096.0f);    
@@ -407,7 +410,7 @@ int main(int argc, char *argv[])
 	cv::Mat depthUndistortMatFlip, rgbMatFlip, irMatFlip;
 	flip(depthUndistortMat, depthUndistortMatFlip, 1);
 	flip(rgbMat, rgbMatFlip, 1);
-	flip(irMat, irMatFlip, 1);
+	flip(irUndistortMat, irMatFlip, 1);
     cv::imwrite(depthImgName, depthUndistortMatFlip);
     cv::imwrite(rgbImgName, rgbMatFlip);    
     cv::imwrite(irImgName, irMatFlip);    
