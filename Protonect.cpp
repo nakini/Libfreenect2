@@ -400,7 +400,7 @@ int main(int argc, char *argv[])
     sprintf(depthImgName, "%s/depthImg_%04d.png", dirDestination.c_str(), framecount);
     sprintf(rgbImgName, "%s/rgbImg_%04d.jpg", dirDestination.c_str(), framecount);
     sprintf(rawDepthName, "%s/rawDepth_%04d.depth", dirDestination.c_str(), framecount);
-    sprintf(irImgName, "%s/irImg_%04d.png", dirDestination.c_str(), framecount);
+    sprintf(irImgName, "%s/irImg_%04d.jpg", dirDestination.c_str(), framecount);
 
     // Save the image
     //cv::imwrite(depthImgName, depthUndistortMat);
