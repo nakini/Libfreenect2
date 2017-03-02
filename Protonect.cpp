@@ -44,7 +44,7 @@
 // OpenCV header files.
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
-
+#include <vector>
 
 bool protonect_shutdown = false; ///< Whether the running application should shut down.
 
@@ -349,6 +349,12 @@ int main(int argc, char *argv[])
     cv::Mat rgbMat, depthMat, irMat;
 	cv::Mat depthUndistortMat(424, 512, CV_32F, 0.0);		// Save undistorted matrix.
 	cv::Mat irUndistortMat(424, 512, CV_32F, 0.0);			// Save undistorted matrix.
+
+	// Here, we are going to set the flag for saving the files in PxM format. By default, OpenCV saves the PxM files in binary format which is of value 1. So change it to 0.
+    std::vector<int> compression_params;
+    compression_params.push_back(CV_IMWRITE_PXM_BINARY);
+    compression_params.push_back(0);
+
 /// [loop start]
   while(!protonect_shutdown && (framemax == (size_t)-1 || framecount < framemax))
   {
@@ -400,7 +406,8 @@ int main(int argc, char *argv[])
     sprintf(depthImgName, "%s/depthImg_%04d.png", dirDestination.c_str(), framecount);
     sprintf(rgbImgName, "%s/rgbImg_%04d.jpg", dirDestination.c_str(), framecount);
     sprintf(rawDepthName, "%s/rawDepth_%04d.depth", dirDestination.c_str(), framecount);
-    sprintf(irImgName, "%s/irImg_%04d.jpg", dirDestination.c_str(), framecount);
+    // BEWARE: If you are going to use the IR images for calibration using "Matlab - calib_gui" toolbox, then you have to convert the type of PGM images using img2double. Default typecasting will set the type to uint8.
+	sprintf(irImgName, "%s/irImg_%04d.pgm", dirDestination.c_str(), framecount);
 
     // Save the image
     //cv::imwrite(depthImgName, depthUndistortMat);
@@ -413,7 +420,7 @@ int main(int argc, char *argv[])
 	flip(irUndistortMat, irMatFlip, 1);
     cv::imwrite(depthImgName, depthUndistortMatFlip);
     cv::imwrite(rgbImgName, rgbMatFlip);    
-    cv::imwrite(irImgName, irMatFlip);    
+    cv::imwrite(irImgName, irMatFlip, compression_params);    
 	
 	// Write the depth values into a binary file.
 	FILE *pFile;
