@@ -45,7 +45,9 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <vector>
+#include <pthread>
 
+bool store_Images = false;		// Store the grabbed images
 bool protonect_shutdown = false; ///< Whether the running application should shut down.
 
 void sigint_handler(int s)
