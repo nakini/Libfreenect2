@@ -45,9 +45,39 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <vector>
-#include <pthread>
+#include <pthread.h>
 
-bool store_Images = false;		// Store the grabbed images
+#ifdef WIN32
+  #include <winsock.h>         // For socket(), connect(), send(), and recv()
+  typedef int socklen_t;
+  typedef char raw_type;       // Type used for raw data on this platform
+#else
+  #include <sys/types.h>       // For data types
+  #include <sys/socket.h>      // For socket(), connect(), send(), and recv()
+  #include <netdb.h>           // For gethostbyname()
+  #include <arpa/inet.h>       // For inet_addr()
+  #include <unistd.h>          // For close()
+  #include <netinet/in.h>      // For sockaddr_in
+  typedef void raw_type;       // Type used for raw data on this platform
+#endif
+
+void *StoreImages(void *ptr){
+	bool *storeImgFlag = (bool *)ptr;
+
+	// Read the bytes coming through the socket
+
+	*storeImgFlag = false;
+    std::cout << "Now stopped grabbing images." << std::endl;
+
+	if (*storeImgFlag){
+		// Create a directory and set the flag.
+	}
+
+	pthread_exit(0);
+}
+
+
+bool store_Images = true;		// Store the grabbed images
 bool protonect_shutdown = false; ///< Whether the running application should shut down.
 
 void sigint_handler(int s)
@@ -82,23 +112,23 @@ void sigusr1_handler(int s)
 #include <cstdlib>
 class MyFileLogger: public libfreenect2::Logger
 {
-private:
-  std::ofstream logfile_;
-public:
-  MyFileLogger(const char *filename)
-  {
-    if (filename)
-      logfile_.open(filename);
-    level_ = Debug;
-  }
-  bool good()
-  {
-    return logfile_.is_open() && logfile_.good();
-  }
-  virtual void log(Level level, const std::string &message)
-  {
-    logfile_ << "[" << libfreenect2::Logger::level2str(level) << "] " << message << std::endl;
-  }
+    private:
+        std::ofstream logfile_;
+    public:
+        MyFileLogger(const char *filename)
+        {
+            if (filename)
+                logfile_.open(filename);
+            level_ = Debug;
+        }
+        bool good()
+        {
+            return logfile_.is_open() && logfile_.good();
+        }
+        virtual void log(Level level, const std::string &message)
+        {
+            logfile_ << "[" << libfreenect2::Logger::level2str(level) << "] " << message << std::endl;
+        }
 };
 /// [logger]
 
@@ -250,6 +280,12 @@ int main(int argc, char *argv[])
 			std::cout << "Unknown argument: " << arg << std::endl;
 		}
 	}
+	
+	// Create a thread which is going to read commands from a GUI process and communicates
+	// the same to this main thread.
+	pthread_t thID;
+	pthread_create(&thID, NULL, StoreImages, (void *)&store_Images);
+
 	// Create the directory to store the images.
 	char cmdName[100];
 	sprintf(cmdName, "mkdir %s", dirDestination.c_str());
@@ -392,43 +428,50 @@ int main(int argc, char *argv[])
 		//cv::Mat(undistorted.height, undistorted.width, CV_16UC1, undistorted.data).copyTo(depthUndistortMat);
 		cv::Mat(undistorted.height, undistorted.width, CV_32F, undistorted.data).copyTo(depthUndistortMat);
 		cv::Mat(ir->height, ir->width, CV_32F, ir->data).copyTo(irUndistortMat);
-		// DON'T COPY THE MATRIX DIRECTLY INTO THE ANOTHER ONE. The "undistorted" matrix is having 4-bytes/pixel. If we copy it into a matrix of type Unsigned-16 then it corrupts the data in the default conversion process.
+		// DON'T COPY THE MATRIX DIRECTLY INTO THE ANOTHER ONE. The "undistorted" matrix is having
+		// 4-bytes/pixel. If we copy it into a matrix of type Unsigned-16 then it corrupts the data 
+		// in the default conversion process.
 		depthUndistortMat.convertTo(depthUndistortMat, CV_16UC1, 1); 
 		irUndistortMat.convertTo(irUndistortMat, CV_16UC1, 1); 
 
 		// Display undistorted peth.
 		//cv::imshow("Undistorted", depthUndistortMat / 4096.0f);    
 
-		// Image names
-		char depthImgName[100];
-		char rgbImgName[100];
-		char rawDepthName[100];
-		char irImgName[100];
+        if (store_Images){
+            // Image names
+            char depthImgName[100];
+            char rgbImgName[100];
+            char rawDepthName[100];
+            char irImgName[100];
 
-		sprintf(depthImgName, "%s/depthImg_%04d.png", dirDestination.c_str(), framecount);
-		sprintf(rgbImgName, "%s/rgbImg_%04d.jpg", dirDestination.c_str(), framecount);
-		sprintf(rawDepthName, "%s/rawDepth_%04d.depth", dirDestination.c_str(), framecount);
-		// BEWARE: If you are going to use the IR images for calibration using "Matlab - calib_gui" toolbox, then you have to convert the type of PGM images using img2double. Default typecasting will set the type to uint8.
-		sprintf(irImgName, "%s/irImg_%04d.pgm", dirDestination.c_str(), framecount);
+            sprintf(depthImgName, "%s/depthImg_%04d.png", dirDestination.c_str(), framecount);
+            sprintf(rgbImgName, "%s/rgbImg_%04d.jpg", dirDestination.c_str(), framecount);
+            sprintf(rawDepthName, "%s/rawDepth_%04d.depth", dirDestination.c_str(), framecount);
+            // BEWARE: If you are going to use the IR images for calibration using "Matlab - calib_gui"
+            // toolbox, then you have to convert the type of PGM images using img2double. Default 
+            //typecasting will set the type to uint8.
+            sprintf(irImgName, "%s/irImg_%04d.pgm", dirDestination.c_str(), framecount);
 
-		// Save the image
-		//cv::imwrite(depthImgName, depthUndistortMat);
-		//cv::imwrite(rgbImgName, rgbMat);    
+            // Save the image
+            //cv::imwrite(depthImgName, depthUndistortMat);
+            //cv::imwrite(rgbImgName, rgbMat);    
 
-		// For some reason the images are flipped along Y-axis. So we have to perform a manual flip on them again.
-		cv::Mat depthUndistortMatFlip, rgbMatFlip, irMatFlip;
-		flip(depthUndistortMat, depthUndistortMatFlip, 1);
-		flip(rgbMat, rgbMatFlip, 1);
-		flip(irUndistortMat, irMatFlip, 1);
-		cv::imwrite(depthImgName, depthUndistortMatFlip);
-		cv::imwrite(rgbImgName, rgbMatFlip);    
-		cv::imwrite(irImgName, irMatFlip, compression_params);    
+            // For some reason the images are flipped along Y-axis. So we have to perform a manual 
+            // flip on them again.
+            cv::Mat depthUndistortMatFlip, rgbMatFlip, irMatFlip;
+            flip(depthUndistortMat, depthUndistortMatFlip, 1);
+            flip(rgbMat, rgbMatFlip, 1);
+            flip(irUndistortMat, irMatFlip, 1);
+            cv::imwrite(depthImgName, depthUndistortMatFlip);
+            cv::imwrite(rgbImgName, rgbMatFlip);    
+            cv::imwrite(irImgName, irMatFlip, compression_params);    
 
-		// Write the depth values into a binary file.
-		FILE *pFile;
-		pFile = fopen(rawDepthName, "wb");
-		fwrite(undistorted.data, undistorted.bytes_per_pixel, undistorted.width*undistorted.height, pFile);
-		fclose(pFile);
+            // Write the depth values into a binary file.
+            FILE *pFile;
+            pFile = fopen(rawDepthName, "wb");
+            fwrite(undistorted.data, undistorted.bytes_per_pixel, undistorted.width*undistorted.height, pFile);
+            fclose(pFile);
+        }
 
 		// Increment the frame count
 		framecount++;
