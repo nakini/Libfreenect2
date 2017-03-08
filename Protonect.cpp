@@ -251,7 +251,13 @@ int main(int argc, char *argv[])
 	// Create the directory to store the images.
 	char cmdName[100];
 	sprintf(cmdName, "mkdir %s", dirDestination.c_str());
-	system(cmdName);
+	int sysRet = system(cmdName);
+    if (sysRet == 0){
+        std::cout << "The \"" << dirDestination.c_str() << "\"is created successfully" << std::endl;
+    }
+    else{
+        std::cout << "The \"" << dirDestination.c_str() << "\" already exists." << std::endl;
+    }
 
 	if (!enable_rgb && !enable_depth)
 	{
