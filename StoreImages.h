@@ -1,0 +1,5 @@
+ifndef __STOREIMAGES_INCLUDED__
+define __STOREIMAGES_INCLUDED__
+
+
+endif
