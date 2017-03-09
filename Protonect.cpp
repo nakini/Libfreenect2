@@ -45,62 +45,9 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <vector>
-#include <pthread.h>
-#include <stdio.h>
+#include "StoreImages.h"            // Function to create folders and communicate with GUI
 
-#ifdef WIN32
-  #include <winsock.h>         // For socket(), connect(), send(), and recv()
-  typedef int socklen_t;
-  typedef char raw_type;       // Type used for raw data on this platform
-#else
-  #include <sys/types.h>       // For data types
-  #include <sys/socket.h>      // For socket(), connect(), send(), and recv()
-  #include <netdb.h>           // For gethostbyname()
-  #include <arpa/inet.h>       // For inet_addr()
-  #include <unistd.h>          // For close()
-  #include <netinet/in.h>      // For sockaddr_in
-  typedef void raw_type;       // Type used for raw data on this platform
-#endif
-
-// Structure to hold the grab/pause flag and the name of the directory which will hold the
-// stored IR/RGB images.
-//typedef struct ThreadData ThreadData;
-struct ThreadData{
-    bool store_Images;		// Store the grabbed images
-	std::string dirDestination;     // Directory to store the images.
-};
 ThreadData thData = {false, "imagesDepthRGB"};
-
-// Create the directory to store the images.
-void CreateDirectory(std::string dirDest){
-    char cmdName[100];
-    sprintf(cmdName, "mkdir %s", dirDest.c_str());
-    int sysRet = system(cmdName);
-    if (sysRet == 0){
-        std::cout << "The \"" << dirDest.c_str() << "\"is created successfully" << std::endl;
-    }
-    else{
-        std::cout << "The \"" << dirDest.c_str() << "\" already exists." << std::endl;
-    }
-}
-
-// Thread to communicate with GUI which send signal to start/stop sensor, grab/pause images,
-// etc.
-void *StoreImages(void *ptr){
-    ThreadData *inThData = (ThreadData *)ptr;
-    std::cout << inThData->dirDestination.c_str() << std::endl; 
-    // Create a socket and bind with a predefined port.
-
-    while(0){}
-
-	// Read the bytes coming through the socket
-	inThData->store_Images = true;
-    std::cout << "Now stopped grabbing images." << std::endl;
-    // Create the directory.
-    CreateDirectory(inThData->dirDestination);
-
-	pthread_exit(0);
-}
 
 bool protonect_shutdown = false; ///< Whether the running application should shut down.
 void sigint_handler(int s)
