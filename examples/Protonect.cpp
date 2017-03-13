@@ -25,7 +25,6 @@
  */
 
 /** @file Protonect.cpp Main application file. */
-
 #include <iostream>
 #include <cstdlib>
 #include <signal.h>
@@ -45,41 +44,11 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <vector>
-#include <pthread.h>
+#include "StoreImages.h"            // Function to create folders and communicate with GUI
 
-#ifdef WIN32
-  #include <winsock.h>         // For socket(), connect(), send(), and recv()
-  typedef int socklen_t;
-  typedef char raw_type;       // Type used for raw data on this platform
-#else
-  #include <sys/types.h>       // For data types
-  #include <sys/socket.h>      // For socket(), connect(), send(), and recv()
-  #include <netdb.h>           // For gethostbyname()
-  #include <arpa/inet.h>       // For inet_addr()
-  #include <unistd.h>          // For close()
-  #include <netinet/in.h>      // For sockaddr_in
-  typedef void raw_type;       // Type used for raw data on this platform
-#endif
+ThreadData thData = {false, "imagesDepthRGB"};
 
-void *StoreImages(void *ptr){
-	bool *storeImgFlag = (bool *)ptr;
-
-	// Read the bytes coming through the socket
-
-	*storeImgFlag = false;
-    std::cout << "Now stopped grabbing images." << std::endl;
-
-	if (*storeImgFlag){
-		// Create a directory and set the flag.
-	}
-
-	pthread_exit(0);
-}
-
-
-bool store_Images = true;		// Store the grabbed images
 bool protonect_shutdown = false; ///< Whether the running application should shut down.
-
 void sigint_handler(int s)
 {
   protonect_shutdown = true;
@@ -156,7 +125,6 @@ int main(int argc, char *argv[])
 	size_t executable_name_idx = program_path.rfind("Protonect");
 
 	std::string binpath = "/";
-	std::string dirDestination = "imagesDepthRGB";              // Directory to store the images.
 
 	if(executable_name_idx != std::string::npos)
 	{
@@ -271,32 +239,29 @@ int main(int argc, char *argv[])
 				return -1;
 			}
 		}
+        // Destination directory to store the images.
 		else if(arg == "-d" || arg == "--destination")
-		{
-			dirDestination = argv[++argI];
-		}
+        {
+            thData.store_Images = true;
+            thData.dirDestination = argv[++argI];
+            // Create a folder with the name provided by the user.            
+            CreateDirectory(thData.dirDestination);
+        }
+        // If the thread option is set then start the main thread to receive the commands
+        // from another process which is, in our case, the GUI.
+        else if(arg == "-t" || arg == "--thread"){
+            // Start the thread.
+            thData.dirDestination = argv[++argI];
+            std::cout << "The directory is: " << thData.dirDestination.c_str() << std::endl;
+            pthread_t thID;
+            pthread_create(&thID, NULL, StoreImages, (void *)&thData);
+        }
 		else 
 		{
 			std::cout << "Unknown argument: " << arg << std::endl;
 		}
 	}
 	
-	// Create a thread which is going to read commands from a GUI process and communicates
-	// the same to this main thread.
-	pthread_t thID;
-	pthread_create(&thID, NULL, StoreImages, (void *)&store_Images);
-
-	// Create the directory to store the images.
-	char cmdName[100];
-	sprintf(cmdName, "mkdir %s", dirDestination.c_str());
-	int sysRet = system(cmdName);
-    if (sysRet == 0){
-        std::cout << "The \"" << dirDestination.c_str() << "\"is created successfully" << std::endl;
-    }
-    else{
-        std::cout << "The \"" << dirDestination.c_str() << "\" already exists." << std::endl;
-    }
-
 	if (!enable_rgb && !enable_depth)
 	{
 		std::cerr << "Disabling both streams is not allowed!" << std::endl;
@@ -437,23 +402,23 @@ int main(int argc, char *argv[])
 		depthUndistortMat.convertTo(depthUndistortMat, CV_16UC1, 1); 
 		irUndistortMat.convertTo(irUndistortMat, CV_16UC1, 1); 
 
-		// Display undistorted peth.
+		// Display undistorted depth.
 		//cv::imshow("Undistorted", depthUndistortMat / 4096.0f);    
 
-        if (store_Images){
+        if (thData.store_Images){
             // Image names
             char depthImgName[100];
             char rgbImgName[100];
             char rawDepthName[100];
             char irImgName[100];
 
-            sprintf(depthImgName, "%s/depthImg_%04d.png", dirDestination.c_str(), framecount);
-            sprintf(rgbImgName, "%s/rgbImg_%04d.jpg", dirDestination.c_str(), framecount);
-            sprintf(rawDepthName, "%s/rawDepth_%04d.depth", dirDestination.c_str(), framecount);
+            sprintf(depthImgName, "%s/depthImg_%04d.png", thData.dirDestination.c_str(), framecount);
+            sprintf(rgbImgName, "%s/rgbImg_%04d.jpg", thData.dirDestination.c_str(), framecount);
+            sprintf(rawDepthName, "%s/rawDepth_%04d.depth", thData.dirDestination.c_str(), framecount);
             // BEWARE: If you are going to use the IR images for calibration using "Matlab - calib_gui"
             // toolbox, then you have to convert the type of PGM images using img2double. Default 
             //typecasting will set the type to uint8.
-            sprintf(irImgName, "%s/irImg_%04d.pgm", dirDestination.c_str(), framecount);
+            sprintf(irImgName, "%s/irImg_%04d.pgm", thData.dirDestination.c_str(), framecount);
 
             // Save the image
             //cv::imwrite(depthImgName, depthUndistortMat);
