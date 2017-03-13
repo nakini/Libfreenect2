@@ -370,15 +370,12 @@ int main(int argc, char *argv[])
 	std::cout << "device firmware: " << dev->getFirmwareVersion() << std::endl;
 	/// [start]
 
-
 	// undistorted --> Stores depth information
 	// registration --> Stores rgb information
 	// [registration setup]
 	libfreenect2::Registration* registration = new libfreenect2::Registration(dev->getIrCameraParams(), dev->getColorCameraParams());
 	libfreenect2::Frame undistorted(512, 424, 4), registered(512, 424, 4);
 	/// [registration setup]
-
-
 
 	size_t framecount = 0;
 #ifdef EXAMPLES_WITH_OPENGL_SUPPORT
