@@ -25,7 +25,6 @@
  */
 
 /** @file Protonect.cpp Main application file. */
-
 #include <iostream>
 #include <cstdlib>
 #include <signal.h>
