@@ -39,6 +39,8 @@ const std::string currentDateTime() {
 // images etc.
 void *StoreImages(void *ptr){
     ThreadData *inThData = (ThreadData *)ptr;
+	std::string destPath = inThData->dirDestination;	// Save destination path
+
     //std::cout << inThData->dirDestination.c_str() << std::endl; 
     int sockfd, newsockfd, portno, n = 0;
     socklen_t clilen;
@@ -87,7 +89,7 @@ void *StoreImages(void *ptr){
             // Create a folder name, that is derived from the current date, and store it in
 			// given path name.
             if(inThData->dirDestination != ""){
-                inThData->dirDestination = inThData->dirDestination + "/" + currentDateTime();
+                inThData->dirDestination = destPath + "/" + currentDateTime();
             }else{
                 inThData->dirDestination = currentDateTime();
             }
@@ -119,8 +121,8 @@ void *StoreImages(void *ptr){
 
         // Send acknowledgement to the client
         n = write(newsockfd, buffer, strlen(buffer));
-        //close(newsockfd);
-        //signal(SIGCHLD,SIG_IGN);   // to avoid zombie problem
+        close(newsockfd);
+        signal(SIGCHLD,SIG_IGN);   // to avoid zombie problem
     }  // end of while
 
     close(sockfd);
