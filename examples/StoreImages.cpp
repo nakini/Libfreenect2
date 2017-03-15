@@ -1,7 +1,7 @@
 #include "StoreImages.h"
 
 // Create the directory to store the images.
-void CreateDirectory(std::string dirDest){
+int CreateDirectory(std::string dirDest){
     int mkdRet = mkdir(dirDest.c_str(), 0777);
     if (mkdRet == 0){
 //        std::cout << "The return value is: " << mkdRet << std::endl;
@@ -9,8 +9,10 @@ void CreateDirectory(std::string dirDest){
     }
     else{
 //        std::cout << "The return value is: " << mkdRet << std::endl;
-        std::cout << "The \"" << dirDest.c_str() << "\" already exists." << std::endl;
+        std::cout << "The folder \"" << dirDest.c_str() << "\" couldn't be created." << std::endl;
     }
+
+	return mkdRet;
 }
 
 // Error message 
@@ -41,7 +43,6 @@ void *StoreImages(void *ptr){
     int sockfd, newsockfd, portno, n = 0;
     socklen_t clilen;
     struct sockaddr_in serv_addr, cli_addr;
-    std::string destDir = "";
 
     // Creates socket. Connection based.
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -83,18 +84,27 @@ void *StoreImages(void *ptr){
 
         // Check the message first.
         if (strncasecmp(buffer, "Start", 5) == 0){
-            //Create a folder and then add date to the folder.
-            inThData->store_Images = true;
-            if(destDir != ""){
-                inThData->dirDestination = destDir + "/" + currentDateTime();
+            // Create a folder name, that is derived from the current date, and store it in
+			// given path name.
+            if(inThData->dirDestination != ""){
+                inThData->dirDestination = inThData->dirDestination + "/" + currentDateTime();
             }else{
                 inThData->dirDestination = currentDateTime();
             }
             std::cout << "Image storing flag is " << inThData->store_Images << std::endl;
             std::cout << "The folder name is " << inThData->dirDestination << std::endl;
-            CreateDirectory(inThData->dirDestination);
-            bzero(buffer, MSG_SIZE);
-            strcpy(buffer, "A folder has been created.");
+            
+			// Folder creation -- If the folder creation fails then inform the same to the
+			// GUI and don't set the store-image flag.
+			int cd_ret = CreateDirectory(inThData->dirDestination);		
+			bzero(buffer, MSG_SIZE);		// Clear the buffer before adding new message
+			if (cd_ret == 0){
+				inThData->store_Images = true;
+				strcpy(buffer, "Created folder -- ");
+				strcat(buffer, inThData->dirDestination.c_str());
+			}else{
+				strcpy(buffer, "Unable to create a folder");
+			}
         }else if(strncasecmp(buffer, "Stop", 4) == 0){
             inThData->store_Images = false;
             std::cout << "Image storing flag is " << inThData->store_Images << std::endl;
@@ -107,10 +117,10 @@ void *StoreImages(void *ptr){
             strcpy(buffer, "The message should be either \"Start\" or \"Stop\"");
         }
 
-        // Send data to the client
+        // Send acknowledgement to the client
         n = write(newsockfd, buffer, strlen(buffer));
-        close(newsockfd);
-        signal(SIGCHLD,SIG_IGN);   // to avoid zombie problem
+        //close(newsockfd);
+        //signal(SIGCHLD,SIG_IGN);   // to avoid zombie problem
     }  // end of while
 
     close(sockfd);

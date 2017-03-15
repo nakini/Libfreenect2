@@ -38,7 +38,7 @@ struct ThreadData{
 // Communicates with GUI process.
 void *StoreImages(void *ptr);
 // Creates directory in which images will be stored.
-void CreateDirectory(std::string dirDest);
+int CreateDirectory(std::string dirDest);
 // Get the current date/time and convert into a string.
 const std::string currentDateTime();
 #endif

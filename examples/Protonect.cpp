@@ -46,7 +46,7 @@
 #include <vector>
 #include "StoreImages.h"            // Function to create folders and communicate with GUI
 
-ThreadData thData = {false, "imagesDepthRGB"};
+ThreadData thData = {false, ""};
 
 bool protonect_shutdown = false; ///< Whether the running application should shut down.
 void sigint_handler(int s)
