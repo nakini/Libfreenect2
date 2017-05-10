@@ -46,7 +46,7 @@
 #include <vector>
 #include "StoreImages.h"            // Function to create folders and communicate with GUI
 
-ThreadData thData = {false, ""};
+ThreadData thData = {false, "", 1};
 
 bool protonect_shutdown = false; ///< Whether the running application should shut down.
 void sigint_handler(int s)
@@ -252,7 +252,8 @@ int main(int argc, char *argv[])
         else if(arg == "-t" || arg == "--thread"){
             // Start the thread.
             thData.dirDestination = argv[++argI];
-            std::cout << "The directory is: " << thData.dirDestination.c_str() << std::endl;
+            std::cout << "The directory is: " << thData.dirDestination.c_str() \
+						<< std::endl;
             pthread_t thID;
             pthread_create(&thID, NULL, StoreImages, (void *)&thData);
         }
@@ -411,6 +412,7 @@ int main(int argc, char *argv[])
             char rgbImgName[100];
             char rawDepthName[100];
             char irImgName[100];
+			framecount = ++thData.frameCount; 
 
             sprintf(depthImgName, "%s/depthImg_%04d.png", thData.dirDestination.c_str(), framecount);
             sprintf(rgbImgName, "%s/rgbImg_%04d.jpg", thData.dirDestination.c_str(), framecount);

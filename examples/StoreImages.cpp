@@ -86,8 +86,8 @@ void *StoreImages(void *ptr){
 
         // Check the message first.
         if (strncasecmp(buffer, "Start", 5) == 0){
-            // Create a folder name, that is derived from the current date, and store it in
-			// given path name.
+            // Create a folder name, that is derived from the current date, and store it 
+			// in given path name.
             if(inThData->dirDestination != ""){
                 inThData->dirDestination = destPath + "/" + currentDateTime();
             }else{
@@ -95,13 +95,16 @@ void *StoreImages(void *ptr){
             }
             std::cout << "Image storing flag is " << inThData->store_Images << std::endl;
             std::cout << "The folder name is " << inThData->dirDestination << std::endl;
+            std::cout << "The frame count starts from - " << inThData->frameCount \
+						<< std::endl;
             
 			// Folder creation -- If the folder creation fails then inform the same to the
 			// GUI and don't set the store-image flag.
 			int cd_ret = CreateDirectory(inThData->dirDestination);		
 			bzero(buffer, MSG_SIZE);		// Clear the buffer before adding new message
 			if (cd_ret == 0){
-				inThData->store_Images = true;
+				inThData->store_Images = true;	// Turn ON the storage flag
+				inThData->frameCount = 1;		// Start the image number from 1
 				strcpy(buffer, "Created folder -- ");
 				strcat(buffer, inThData->dirDestination.c_str());
 			}else{

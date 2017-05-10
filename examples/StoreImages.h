@@ -33,6 +33,7 @@
 struct ThreadData{
     bool store_Images;		// Store the grabbed images
 	std::string dirDestination;     // Directory to store the images.
+	int frameCount;			// The frame count should start from 1 for each grab.
 };
 
 // Communicates with GUI process.
