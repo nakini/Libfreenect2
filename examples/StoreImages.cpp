@@ -45,9 +45,11 @@ void *StoreImages(void *ptr){
     int sockfd, newsockfd, portno, n = 0;
     socklen_t clilen;
     struct sockaddr_in serv_addr, cli_addr;
-
+    int boolval = 1;            // for a socket option
+    
     // Creates socket. Connection based.
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    // sockfd = socket(AF_INET, SOCK_STREAM, 0);       //TCP
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);       //UDP
     if (sockfd < 0)
         error("ERROR opening socket");
 
@@ -64,8 +66,16 @@ void *StoreImages(void *ptr){
     // binds the socket to the address of the host and the port number
     if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
         error("ERROR on binding");
-    // listen for connections
-    listen(sockfd, 5);
+    // TCP -- listen for connections
+    // listen(sockfd, 5);
+
+    // change socket permissions to allow broadcast
+   if (setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &boolval, sizeof(boolval)) < 0)
+    {
+        printf("error setting socket options\n");
+        exit(-1);
+    }
+
 
     // Client related information
     clilen = sizeof(cli_addr);   // size of structure
@@ -73,13 +83,18 @@ void *StoreImages(void *ptr){
     bzero(buffer,MSG_SIZE);
 
     while (1){
-        // Blocks until a client connects to the server
-        newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
-        if (newsockfd < 0)
-            error("ERROR on accept");
+        // TCP -- Blocks until a client connects to the server
+        // newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+        // if (newsockfd < 0)
+        //     error("ERROR on accept");
+
         // Read data from the client
         bzero(buffer, MSG_SIZE);
-        n = read(newsockfd,buffer,MSG_SIZE-1); // recvfrom() could be used
+        // TCP style
+        // n = read(newsockfd,buffer,MSG_SIZE-1); // recvfrom() could be used
+
+        // UDP Style
+        n = recvfrom(sockfd, buffer, MSG_SIZE, 0, (struct sockaddr *)&cli_addr, &clilen);
         if (n < 0)
             error("ERROR reading from socket");
         std::cout << "Here is the message: %s\n" << buffer << std::endl;
@@ -122,10 +137,13 @@ void *StoreImages(void *ptr){
             strcpy(buffer, "The message should be either \"Start\" or \"Stop\"");
         }
 
-        // Send acknowledgement to the client
-        n = write(newsockfd, buffer, strlen(buffer));
-        close(newsockfd);
-        signal(SIGCHLD,SIG_IGN);   // to avoid zombie problem
+        // TCP way --- Send acknowledgement to the client
+        // n = write(newsockfd, buffer, strlen(buffer));
+        // close(newsockfd);
+        // signal(SIGCHLD,SIG_IGN);   // to avoid zombie problem
+
+        // UPD way -- Send acknowledgement to the client
+        n = sendto(sockfd, buffer, strlen(buffer), 0, (struct sockaddr *)&cli_addr, clilen);
     }  // end of while
 
     close(sockfd);
