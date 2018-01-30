@@ -317,6 +317,7 @@ IF(ENABLE_OPENCL)
 
     LIST(APPEND SOURCES
       src/opencl_depth_packet_processor.cpp
+      src/opencl_kde_depth_packet_processor.cpp
     )
 
     LIST(APPEND LIBRARIES
@@ -325,6 +326,7 @@ IF(ENABLE_OPENCL)
 
     LIST(APPEND RESOURCES
       src/opencl_depth_packet_processor.cl
+      src/opencl_kde_depth_packet_processor.cl
     )
 
     # Major Linux distro stable releases have buggy OpenCL ICD loader.
@@ -347,14 +349,19 @@ IF(ENABLE_CUDA)
     SET(HAVE_CUDA yes)
 
     STRING(REPLACE "\\" "/" NVCUDASAMPLES_ROOT "$ENV{NVCUDASAMPLES_ROOT}")
+    STRING(REPLACE "\\" "/" NVCUDASAMPLES8_0_ROOT "$ENV{NVCUDASAMPLES8_0_ROOT}")
     CUDA_INCLUDE_DIRECTORIES(
       "${MY_DIR}/include/"
       "${CUDA_TOOLKIT_ROOT_DIR}/samples/common/inc"
       "${NVCUDASAMPLES_ROOT}/common/inc"
+      "${NVCUDASAMPLES8_0_ROOT}/common/inc"
     )
     SET(CUDA_FLAGS -use_fast_math)
     IF(NOT MSVC)
       SET(CUDA_FLAGS "${CUDA_FLAGS} -Xcompiler -fPIC")
+    ENDIF()
+    IF(HAVE_CXX11 STREQUAL yes AND CUDA_VERSION VERSION_GREATER 7.0)
+      SET(CUDA_FLAGS "${CUDA_FLAGS} -std=c++11")
     ENDIF()
 
     SET(OLD_CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
@@ -363,6 +370,7 @@ IF(ENABLE_CUDA)
     ENDIF()
     CUDA_COMPILE(CUDA_OBJECTS
       src/cuda_depth_packet_processor.cu
+      src/cuda_kde_depth_packet_processor.cu
       OPTIONS ${CUDA_FLAGS}
     )
     SET(CMAKE_CXX_FLAGS "${OLD_CMAKE_CXX_FLAGS}")
@@ -385,6 +393,16 @@ ENDIF(ENABLE_CUDA)
 
 # PTHREAD Support (For CMake 2.8.12+)
 find_package (Threads)
+
+# RPATH handling for CUDA 8.0 libOpenCL.so conflict. See #804.
+IF(HAVE_OpenCL STREQUAL yes AND UNIX AND NOT APPLE)
+  FILE(GLOB CUDA_ld_so_conf /etc/ld.so.conf.d/cuda*.conf)
+  IF(CUDA_ld_so_conf)
+    MESSAGE(WARNING "Your CUDA installation overrides OpenCL system library path.")
+    GET_FILENAME_COMPONENT(OpenCL_LIB_PATH ${OpenCL_LIBRARY} DIRECTORY)
+    SET(CMAKE_INSTALL_RPATH ${OpenCL_LIB_PATH} CACHE STRING "Set RPATH for system OpenCL")
+  ENDIF()
+ENDIF()
 
 # RPATH handling for private libusb copies
 # Users have two options:
@@ -430,12 +448,14 @@ MESSAGE(STATUS "Linking with these libraries: \n ${LIBRARIES_STRING}")
 TARGET_LINK_LIBRARIES(freenect2 ${LIBRARIES} ${OpenCV_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
 CONFIGURE_FILE(freenect2.cmake.in "${PROJECT_BINARY_DIR}/freenect2Config.cmake" @ONLY)
+CONFIGURE_FILE(freenect2Version.cmake.in "${PROJECT_BINARY_DIR}/freenect2ConfigVersion.cmake" @ONLY)
 CONFIGURE_FILE(freenect2.pc.in "${PROJECT_BINARY_DIR}/freenect2.pc" @ONLY)
 
 INSTALL(TARGETS freenect2 DESTINATION lib RUNTIME DESTINATION bin)
 INSTALL(DIRECTORY "${MY_DIR}/include/${PROJECT_NAME}" DESTINATION include PATTERN "*.in" EXCLUDE)
 INSTALL(DIRECTORY "${PROJECT_BINARY_DIR}/${PROJECT_NAME}" DESTINATION include)
 INSTALL(FILES "${PROJECT_BINARY_DIR}/freenect2Config.cmake" DESTINATION lib/cmake/freenect2/)
+INSTALL(FILES "${PROJECT_BINARY_DIR}/freenect2ConfigVersion.cmake" DESTINATION lib/cmake/freenect2/)
 INSTALL(FILES "${PROJECT_BINARY_DIR}/freenect2.pc" DESTINATION lib/pkgconfig/)
 
 ADD_SUBDIRECTORY(${MY_DIR}/doc)
@@ -468,6 +488,14 @@ IF(BUILD_OPENNI2_DRIVER)
       VERBATIM
     )
   ENDIF()
+ENDIF()
+
+OPTION(BUILD_STREAMER_RECORDER "Build streamer_recorder" OFF)
+SET(HAVE_streamer_recorder disabled)
+IF(BUILD_STREAMER_RECORDER)
+  SET(HAVE_streamer_recorder yes)
+  MESSAGE(STATUS "Configurating streamer_recorder")
+  ADD_SUBDIRECTORY(${MY_DIR}/tools/streamer_recorder)
 ENDIF()
 
 GET_CMAKE_PROPERTY(vars VARIABLES)
