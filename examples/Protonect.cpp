@@ -40,11 +40,13 @@
 #include "viewer.h"
 #endif
 
-// OpenCV header files.
+// OpenCV and PCL header files.
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <vector>
 #include "StoreImages.h"            // Function to create folders and communicate with GUI
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
 
 ThreadData thData = {false, "", 1};
 
@@ -382,9 +384,9 @@ int main(int argc, char *argv[])
 
 
 		// Display the images.
-		//    cv::imshow("RGB", rgbMat);
-		//    cv::imshow("IR", irMat / 4096.0f);
-		//    cv::imshow("Depth", depthMat / 4096.0f); 
+//        cv::imshow("RGB", rgbMat);
+//        cv::imshow("IR", irMat / 4096.0f);
+//        cv::imshow("Depth", depthMat / 4096.0f);
 
 		if (enable_rgb && enable_depth)
 		{
