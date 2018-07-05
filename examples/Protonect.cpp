@@ -40,17 +40,19 @@
 #include "viewer.h"
 #endif
 
-// OpenCV and PCL header files.
+// OpenCV header files.
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <vector>
-#include "StoreImages.h"            // Function to create folders and communicate with GUI
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
+
+// Function to create folders and communicate with GUI
+#include "StoreImages.h"
+
 
 ThreadData thData = {false, "", 1};
 
-bool protonect_shutdown = false; ///< Whether the running application should shut down.
+///< Whether the running application should shut down.
+bool protonect_shutdown = false;
 void sigint_handler(int s)
 {
   protonect_shutdown = true;
@@ -98,7 +100,8 @@ class MyFileLogger: public libfreenect2::Logger
         }
         virtual void log(Level level, const std::string &message)
         {
-            logfile_ << "[" << libfreenect2::Logger::level2str(level) << "] " << message << std::endl;
+            logfile_ << "[" << libfreenect2::Logger::level2str(level) << "] "
+                     << message << std::endl;
         }
 };
 /// [logger]
@@ -120,8 +123,11 @@ int main(int argc, char *argv[])
 	std::string program_path(argv[0]);
 	std::cerr << "Version: " << LIBFREENECT2_VERSION << std::endl;
 	std::cerr << "Environment variables: LOGFILE=<protonect.log>" << std::endl;
-	std::cerr << "Usage: " << program_path << " [-gpu=<id>] [gl | cl | cuda | cpu] [<device serial>]" << std::endl;
-	std::cerr << "        [-noviewer] [-norgb | -nodepth] [-help] [-version]" << std::endl;
+    std::cerr << "Usage: " << program_path <<
+                 " [-gpu=<id>] [gl | cl | cuda | cpu] [<device serial>]"
+              << std::endl;
+    std::cerr << "        [-noviewer] [-norgb | -nodepth] [-help] [-version]"
+              << std::endl;
 	std::cerr << "        [-frames <number of frames to process>]" << std::endl;
 	std::cerr << "To pause and unpause: pkill -USR1 Protonect" << std::endl;
 	size_t executable_name_idx = program_path.rfind("Protonect");
@@ -135,11 +141,14 @@ int main(int argc, char *argv[])
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 	// avoid flooing the very slow Windows console with debug messages
-	libfreenect2::setGlobalLogger(libfreenect2::createConsoleLogger(libfreenect2::Logger::Info));
+    libfreenect2::setGlobalLogger(
+                libfreenect2::createConsoleLogger(libfreenect2::Logger::Info));
 #else
-	// create a console logger with debug level (default is console logger with info level)
+    // create a console logger with debug level (default is console logger
+    // with info level)
 	/// [logging]
-	libfreenect2::setGlobalLogger(libfreenect2::createConsoleLogger(libfreenect2::Logger::Debug));
+    libfreenect2::setGlobalLogger(
+                libfreenect2::createConsoleLogger(libfreenect2::Logger::Debug));
 	/// [logging]
 #endif
 	/// [file logging]
@@ -168,7 +177,8 @@ int main(int argc, char *argv[])
 	{
 		const std::string arg(argv[argI]);
 
-		if(arg == "-help" || arg == "--help" || arg == "-h" || arg == "-v" || arg == "--version" || arg == "-version")
+        if(arg == "-help" || arg == "--help" || arg == "-h" || arg == "-v"
+                || arg == "--version" || arg == "-version")
 		{
 			// Just let the initial lines display at the beginning of main
 			return 0;
@@ -177,7 +187,8 @@ int main(int argc, char *argv[])
 		{
 			if (pipeline)
 			{
-				std::cerr << "-gpu must be specified before pipeline argument" << std::endl;
+                std::cerr << "-gpu must be specified before pipeline argument"
+                          << std::endl;
 				return -1;
 			}
 			deviceId = atoi(argv[argI] + 5);
@@ -216,7 +227,8 @@ int main(int argc, char *argv[])
 			std::cout << "CUDA pipeline is not supported!" << std::endl;
 #endif
 		}
-		else if(arg.find_first_not_of("0123456789") == std::string::npos) //check if parameter could be a serial number
+        //check if parameter could be a serial number
+        else if(arg.find_first_not_of("0123456789") == std::string::npos)
 		{
 			serial = arg;
 		}
@@ -237,7 +249,8 @@ int main(int argc, char *argv[])
 			++argI;
 			framemax = strtol(argv[argI], NULL, 0);
 			if (framemax == 0) {
-				std::cerr << "invalid frame count '" << argv[argI] << "'" << std::endl;
+                std::cerr << "invalid frame count '" << argv[argI] << "'"
+                          << std::endl;
 				return -1;
 			}
 		}
@@ -249,8 +262,8 @@ int main(int argc, char *argv[])
             // Create a folder with the name provided by the user.            
             CreateDirectory(thData.dirDestination);
         }
-        // If the thread option is set then start the main thread to receive the commands
-        // from another process which is, in our case, the GUI.
+        // If the thread option is set then start the main thread to receive
+        // the commands from another process which is, in our case, the GUI.
         else if(arg == "-t" || arg == "--thread"){
             // Start the thread.
             thData.dirDestination = argv[++argI];
@@ -341,7 +354,9 @@ int main(int argc, char *argv[])
 	// undistorted --> Stores depth information
 	// registration --> Stores rgb information
 	// [registration setup]
-	libfreenect2::Registration* registration = new libfreenect2::Registration(dev->getIrCameraParams(), dev->getColorCameraParams());
+	libfreenect2::Registration* registration = 
+        new libfreenect2::Registration(dev->getIrCameraParams(),
+                                       dev->getColorCameraParams());
 	libfreenect2::Frame undistorted(512, 424, 4), registered(512, 424, 4);
 	/// [registration setup]
 
@@ -356,10 +371,13 @@ int main(int argc, char *argv[])
 
 	// OpenCV Containers
 	cv::Mat rgbMat, depthMat, irMat;
-	cv::Mat depthUndistortMat(424, 512, CV_32F, 0.0);		// Save undistorted matrix.
-	cv::Mat irUndistortMat(424, 512, CV_32F, 0.0);			// Save undistorted matrix.
+    cv::Mat depthUndistortMat(424, 512, CV_32F, 0.0);		// undistorted depth image.
+    cv::Mat irUndistortMat(424, 512, CV_32F, 0.0);			// undistorted infrared image.
+    cv::Mat mergedUndistortMat(424, 512, CV_8UC4, 0.0);		// undistorted registered image.
 
-	// Here, we are going to set the flag for saving the files in PxM format. By default, OpenCV saves the PxM files in binary format which is of value 1. So change it to 0.
+	// Here, we are going to set the flag for saving the files in PxM format. 
+    // By default, OpenCV saves the PxM files in binary format which is of 
+    // value 1. So change it to 0.
 	std::vector<int> compression_params;
 	compression_params.push_back(CV_IMWRITE_PXM_BINARY);
 	compression_params.push_back(0);
@@ -396,14 +414,21 @@ int main(int argc, char *argv[])
 		}
 
 		// Copy the undistorted depth
-		//cv::Mat(undistorted.height, undistorted.width, CV_16UC1, undistorted.data).copyTo(depthUndistortMat);
-		cv::Mat(undistorted.height, undistorted.width, CV_32F, undistorted.data).copyTo(depthUndistortMat);
+		//cv::Mat(undistorted.height, undistorted.width, CV_16UC1, 
+        //        undistorted.data).copyTo(depthUndistortMat);
+		cv::Mat(undistorted.height, undistorted.width, CV_32F, 
+                undistorted.data).copyTo(depthUndistortMat);
 		cv::Mat(ir->height, ir->width, CV_32F, ir->data).copyTo(irUndistortMat);
-		// DON'T COPY THE MATRIX DIRECTLY INTO THE ANOTHER ONE. The "undistorted" matrix is having
-		// 4-bytes/pixel. If we copy it into a matrix of type Unsigned-16 then it corrupts the data 
-		// in the default conversion process.
+        cv::Mat(registered.height, registered.width, CV_8UC4,
+                registered.data).copyTo(mergedUndistortMat);
+
+		// DON'T COPY THE MATRIX DIRECTLY INTO THE ANOTHER ONE. The 
+        // "undistorted" matrix is having 4-bytes/pixel. If we copy it into a 
+        // matrix of type Unsigned-16 then it corrupts the data in the default 
+        // conversion process.
 		depthUndistortMat.convertTo(depthUndistortMat, CV_16UC1, 1); 
 		irUndistortMat.convertTo(irUndistortMat, CV_16UC1, 1); 
+		mergedUndistortMat.convertTo(mergedUndistortMat, CV_16UC1, 1); 
 
 		// Display undistorted depth.
 		//cv::imshow("Undistorted", depthUndistortMat / 4096.0f);    
@@ -414,34 +439,45 @@ int main(int argc, char *argv[])
             char rgbImgName[100];
             char rawDepthName[100];
             char irImgName[100];
-			framecount = ++thData.frameCount; 
+            char mergedImgName[100];
+			framecount = thData.frameCount++; 
 
-            sprintf(depthImgName, "%s/depthImg_%04d.png", thData.dirDestination.c_str(), framecount);
-            sprintf(rgbImgName, "%s/rgbImg_%04d.jpg", thData.dirDestination.c_str(), framecount);
-            sprintf(rawDepthName, "%s/rawDepth_%04d.depth", thData.dirDestination.c_str(), framecount);
-            // BEWARE: If you are going to use the IR images for calibration using "Matlab - calib_gui"
-            // toolbox, then you have to convert the type of PGM images using img2double. Default 
-            //typecasting will set the type to uint8.
-            sprintf(irImgName, "%s/irImg_%04d.pgm", thData.dirDestination.c_str(), framecount);
+            sprintf(depthImgName, "%s/depthImg_%04d.png", 
+                    thData.dirDestination.c_str(), framecount);
+            sprintf(rgbImgName, "%s/rgbImg_%04d.jpg", 
+                    thData.dirDestination.c_str(), framecount);
+            sprintf(rawDepthName, "%s/rawDepth_%04d.depth", 
+                    thData.dirDestination.c_str(), framecount);
+            sprintf(mergedImgName, "%s/mergedImg_%04d.jpg",
+                    thData.dirDestination.c_str(), framecount);
+            // BEWARE: If you are going to use the IR images for calibration 
+            // using "Matlab - calib_gui" toolbox, then you have to convert 
+            // the type of PGM images using img2double. Default typecasting 
+            // will set the type to uint8.
+            sprintf(irImgName, "%s/irImg_%04d.pgm", 
+                    thData.dirDestination.c_str(), framecount);
 
             // Save the image
             //cv::imwrite(depthImgName, depthUndistortMat);
             //cv::imwrite(rgbImgName, rgbMat);    
 
-            // For some reason the images are flipped along Y-axis. So we have to perform a manual 
-            // flip on them again.
-            cv::Mat depthUndistortMatFlip, rgbMatFlip, irMatFlip;
+            // For some reason the images are flipped along Y-axis. So we have 
+            // to perform a manual flip on them again.
+            cv::Mat depthUndistortMatFlip, rgbMatFlip, irMatFlip, mergedMatFlip;
             flip(depthUndistortMat, depthUndistortMatFlip, 1);
             flip(rgbMat, rgbMatFlip, 1);
             flip(irUndistortMat, irMatFlip, 1);
+            flip(mergedUndistortMat, mergedMatFlip, 1);
             cv::imwrite(depthImgName, depthUndistortMatFlip);
             cv::imwrite(rgbImgName, rgbMatFlip);    
             cv::imwrite(irImgName, irMatFlip, compression_params);    
+            cv::imwrite(mergedImgName, mergedMatFlip, compression_params);    
 
             // Write the depth values into a binary file.
             FILE *pFile;
             pFile = fopen(rawDepthName, "wb");
-            fwrite(undistorted.data, undistorted.bytes_per_pixel, undistorted.width*undistorted.height, pFile);
+            fwrite(undistorted.data, undistorted.bytes_per_pixel, 
+                    undistorted.width*undistorted.height, pFile);
             fclose(pFile);
         }
 
@@ -450,7 +486,8 @@ int main(int argc, char *argv[])
 		if (!viewer_enabled)
 		{
 			if (framecount % 100 == 0)
-				std::cout << "The viewer is turned off. Received " << framecount << " frames. Ctrl-C to stop." << std::endl;
+				std::cout << "The viewer is turned off. Received " << 
+                    framecount << " frames. Ctrl-C to stop." << std::endl;
 			listener.release(frames);
 			continue;
 		}
@@ -475,7 +512,8 @@ int main(int argc, char *argv[])
 
 		/// [loop end]
 		listener.release(frames);
-		/** libfreenect2::this_thread::sleep_for(libfreenect2::chrono::milliseconds(100)); */
+//		libfreenect2::this_thread::sleep_for(
+//                    libfreenect2::chrono::milliseconds(100));
 	}
 	/// [loop end]
 
