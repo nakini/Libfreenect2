@@ -23,6 +23,7 @@ void error(const char *msg)
 }
 
 // This code is borrowed from -- http://stackoverflow.com/a/10467633/5095879
+// It will read the system time and convert it into the human readable format.
 const std::string currentDateTime() {
     time_t     now = time(0);
     struct tm  tstruct;
@@ -35,6 +36,20 @@ const std::string currentDateTime() {
     return buf;
 }
 
+// This code is borrowed from -- https://stackoverflow.com/a/478960/5095879
+// It will return the output of a system command executed on terminal
+std::string exec(const char* cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) throw std::runtime_error("popen() failed!");
+    while (!feof(pipe.get())) {
+        if (fgets(buffer.data(), 128, pipe.get()) != nullptr)
+            result += buffer.data();
+    }
+    return result;
+}
+
 // Thread to communicate with GUI which send signal to start/stop sensor, grab/pause,
 // images etc.
 void *StoreImages(void *ptr){
@@ -42,7 +57,7 @@ void *StoreImages(void *ptr){
 	std::string destPath = inThData->dirDestination;	// Save destination path
 
     //std::cout << inThData->dirDestination.c_str() << std::endl; 
-    int sockfd, newsockfd, portno, n = 0;
+    int sockfd, portno, n = 0;
     socklen_t clilen;
     struct sockaddr_in serv_addr, cli_addr;
     int boolval = 1;            // for a socket option
@@ -116,7 +131,7 @@ void *StoreImages(void *ptr){
 			// Folder creation -- If the folder creation fails then inform the same to the
 			// GUI and don't set the store-image flag.
 			int cd_ret = CreateDirectory(inThData->dirDestination);		
-			bzero(buffer, MSG_SIZE);		// Clear the buffer before adding new message
+            bzero(buffer, MSG_SIZE);			// Clear the buffer before adding new message
 			if (cd_ret == 0){
 				inThData->store_Images = true;	// Turn ON the storage flag
 				inThData->frameCount = 1;		// Start the image number from 1
@@ -127,10 +142,16 @@ void *StoreImages(void *ptr){
 			}
         }else if(strncasecmp(buffer, "Stop", 4) == 0){
             inThData->store_Images = false;
-            std::cout << "Image storing flag is " << inThData->store_Images << std::endl;
-            // Send an acknowledgement.
+            std::cout << "Image storing flag is " << inThData->store_Images
+                      << std::endl;
+            // Send an acknowledgement - Number of images grabbed for each type.
             bzero(buffer, MSG_SIZE);
-            strcpy(buffer, "Image grabbing process has stopped.");
+            char *sysCmd = NULL;
+            sprintf(sysCmd, "ls %s/ | grep depth | wc", inThData->dirDestination.c_str());
+            std::string cmdOutput = exec(sysCmd);
+            strcpy(buffer, "Image grabbing done.\n");
+            strcat(buffer, "Total image saved for each type: ");
+            strcat(buffer, cmdOutput.c_str());
         }else{
             // Send an error message.
             bzero(buffer, MSG_SIZE);

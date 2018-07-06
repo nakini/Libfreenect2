@@ -11,6 +11,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <cstring>
+#include <string>
+#include <memory>
+#include <array>
+#include <stdexcept>
 
 #define MSG_SIZE 100			// message size
 
