@@ -146,8 +146,8 @@ void *StoreImages(void *ptr){
                       << std::endl;
             // Send an acknowledgement - Number of images grabbed for each type.
             bzero(buffer, MSG_SIZE);
-            char *sysCmd = NULL;
-            sprintf(sysCmd, "ls %s/ | grep depth | wc", inThData->dirDestination.c_str());
+            char sysCmd[200];
+            sprintf(sysCmd, "ls %s/depth* | wc", inThData->dirDestination.c_str());
             std::string cmdOutput = exec(sysCmd);
             strcpy(buffer, "Image grabbing done.\n");
             strcat(buffer, "Total image saved for each type: ");
