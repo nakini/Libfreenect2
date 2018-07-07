@@ -4,12 +4,12 @@
 int CreateDirectory(std::string dirDest){
     int mkdRet = mkdir(dirDest.c_str(), 0777);
     if (mkdRet == 0){
-//        std::cout << "The return value is: " << mkdRet << std::endl;
-        std::cout << "The \"" << dirDest.c_str() << "\"is created successfully" << std::endl;
+        std::cout << "The \"" << dirDest.c_str() << "\"is created successfully"
+                  << std::endl;
     }
     else{
-//        std::cout << "The return value is: " << mkdRet << std::endl;
-        std::cout << "The folder \"" << dirDest.c_str() << "\" couldn't be created." << std::endl;
+        std::cout << "The folder \"" << dirDest.c_str()
+                  << "\" couldn't be created." << std::endl;
     }
 
 	return mkdRet;
@@ -50,8 +50,8 @@ std::string exec(const char* cmd) {
     return result;
 }
 
-// Thread to communicate with GUI which send signal to start/stop sensor, grab/pause,
-// images etc.
+// Thread to communicate with GUI which send signal to start/stop sensor,
+// grab/pause, images etc.
 void *StoreImages(void *ptr){
     ThreadData *inThData = (ThreadData *)ptr;
 	std::string destPath = inThData->dirDestination;	// Save destination path
@@ -109,27 +109,30 @@ void *StoreImages(void *ptr){
         // n = read(newsockfd,buffer,MSG_SIZE-1); // recvfrom() could be used
 
         // UDP Style
-        n = recvfrom(sockfd, buffer, MSG_SIZE, 0, (struct sockaddr *)&cli_addr, &clilen);
+        n = recvfrom(sockfd, buffer, MSG_SIZE, 0, (struct sockaddr *)&cli_addr,
+                     &clilen);
         if (n < 0)
             error("ERROR reading from socket");
         std::cout << "Here is the message: %s\n" << buffer << std::endl;
 
         // Check the message first.
         if (strncasecmp(buffer, "Start", 5) == 0){
-            // Create a folder name, that is derived from the current date, and store it 
-			// in given path name.
+            // Create a folder name, that is derived from the current date, and
+            // store it in given path name.
             if(inThData->dirDestination != ""){
                 inThData->dirDestination = destPath + "/" + currentDateTime();
             }else{
                 inThData->dirDestination = currentDateTime();
             }
-            std::cout << "Image storing flag is " << inThData->store_Images << std::endl;
-            std::cout << "The folder name is " << inThData->dirDestination << std::endl;
-            std::cout << "The frame count starts from - " << inThData->frameCount \
-						<< std::endl;
+            std::cout << "Image storing flag is " << inThData->store_Images
+                      << std::endl;
+            std::cout << "The folder name is " << inThData->dirDestination
+                      << std::endl;
+            std::cout << "The frame count starts from - " << inThData->frameCount
+                      << std::endl;
             
-			// Folder creation -- If the folder creation fails then inform the same to the
-			// GUI and don't set the store-image flag.
+            // Folder creation -- If the folder creation fails then inform the
+            // same to the GUI and don't set the store-image flag.
 			int cd_ret = CreateDirectory(inThData->dirDestination);		
             bzero(buffer, MSG_SIZE);			// Clear the buffer before adding new message
 			if (cd_ret == 0){
@@ -164,7 +167,8 @@ void *StoreImages(void *ptr){
         // signal(SIGCHLD,SIG_IGN);   // to avoid zombie problem
 
         // UPD way -- Send acknowledgement to the client
-        n = sendto(sockfd, buffer, strlen(buffer), 0, (struct sockaddr *)&cli_addr, clilen);
+        n = sendto(sockfd, buffer, strlen(buffer), 0,
+                   (struct sockaddr *)&cli_addr, clilen);
     }  // end of while
 
     close(sockfd);
