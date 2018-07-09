@@ -30,7 +30,7 @@ SET(DEPENDS_DIR "${MY_DIR}/depends" CACHE STRING "dependency directory must be s
 OPTION(BUILD_SHARED_LIBS "Build shared (ON) or static (OFF) libraries" ON)
 OPTION(BUILD_EXAMPLES "Build examples" ON)
 OPTION(BUILD_OPENNI2_DRIVER "Build OpenNI2 driver" ON)
-OPTION(ENABLE_CXX11 "Enable C++11 support" OFF)
+OPTION(ENABLE_CXX11 "Enable C++11 support" ON)
 OPTION(ENABLE_OPENCL "Enable OpenCL support" ON)
 OPTION(ENABLE_CUDA "Enable CUDA support" ON)
 OPTION(ENABLE_OPENGL "Enable OpenGL support" ON)
