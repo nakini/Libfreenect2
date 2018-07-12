@@ -452,8 +452,8 @@ int main(int argc, char *argv[])
                     thData.dirDestination.c_str(), framecount);
             // BEWARE: If you are going to use the IR images for calibration 
             // using "Matlab - calib_gui" toolbox, then you have to convert 
-            // the type of PGM images using img2double. Default typecasting 
-            // will set the type to uint8.
+            // the type of PGM images using im2double. Default typecasting 
+            // will set the type to uint8/uint16.
             sprintf(irImgName, "%s/irImg_%04d.pgm", 
                     thData.dirDestination.c_str(), framecount);
 
