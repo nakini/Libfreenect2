@@ -133,18 +133,30 @@ void *StoreImages(void *ptr){
                       << std::endl;
             
             // Folder creation -- If the folder creation fails then inform the
-            // same to the GUI and don't set the store-image flag.
+            // same to the GUI and don't set the store-image flag. Also open a 
+            // file to store the time stamp of each image. If that fails then 
+            // inform the same to the use.
 			int cd_ret = CreateDirectory(inThData->dirDestination);		
+            char timelogFileName[300];          // Time log file name
+            sprintf(timelogFileName, "%s/TimeLog.txt", 
+                    inThData->dirDestination.c_str());
+            inThData->fpTimeLog = fopen(timelogFileName, "w");   // Open time log file
+            if (inThData->fpTimeLog == NULL){
+                std::cout << "Unable to open the time log file" << std::endl;
+            }
             bzero(buffer, MSG_SIZE);			// Clear the buffer before adding new message
-			if (cd_ret == 0){
+			if (cd_ret == 0 && inThData->fpTimeLog != NULL){
 				inThData->store_Images = true;	// Turn ON the storage flag
 				inThData->frameCount = 1;		// Start the image number from 1
 				strcpy(buffer, "Created folder -- ");
 				strcat(buffer, inThData->dirDestination.c_str());
-			}else{
+			}else if(cd_ret != 0){
 				strcpy(buffer, "Unable to create a folder");
-			}
+			}else{
+                strcpy(buffer, "Unable to create the time log file");
+            }
         }else if(strncasecmp(buffer, "Stop", 4) == 0){
+            fclose(inThData->fpTimeLog);         // Close the time log file
             inThData->store_Images = false;
             std::cout << "Image storing flag is " << inThData->store_Images
                       << std::endl;

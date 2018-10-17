@@ -259,6 +259,7 @@ int main(int argc, char *argv[])
         {
             thData.store_Images = true;
             thData.dirDestination = argv[++argI];
+			thData.fpTimeLog = NULL;
             // Create a folder with the name provided by the user.            
             CreateDirectory(thData.dirDestination);
         }
@@ -382,6 +383,9 @@ int main(int argc, char *argv[])
 	compression_params.push_back(CV_IMWRITE_PXM_BINARY);
 	compression_params.push_back(0);
 
+	// Time structre to hold the time in seconds and micro seconds.
+	struct timeval timestamp;
+
 	/// [loop start]
 	while(!protonect_shutdown && (framemax == (size_t)-1 || framecount < framemax))
 	{
@@ -479,6 +483,10 @@ int main(int argc, char *argv[])
             fwrite(undistorted.data, undistorted.bytes_per_pixel, 
                     undistorted.width*undistorted.height, pFile);
             fclose(pFile);
+
+			// Get the time of each frame and write into the file
+			gettimeofday(&timestamp, NULL);
+			fprintf(thData.fpTimeLog, "%s\t%ld\t%ld\n", depthImgName, timestamp.tv_sec, timestamp.tv_usec); 
         }
 
 		// Increment the frame count

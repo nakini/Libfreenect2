@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>                   // Current time functionalities.
+#include <sys/time.h>
 #include <signal.h>
 #include <dirent.h>
 #include <sys/types.h>
@@ -38,6 +39,7 @@ struct ThreadData{
     bool store_Images;		// Store the grabbed images
 	std::string dirDestination;     // Directory to store the images.
 	int frameCount;			// The frame count should start from 1 for each grab.
+	FILE *fpTimeLog;
 };
 
 // Communicates with GUI process.
