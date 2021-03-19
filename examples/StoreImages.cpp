@@ -2,14 +2,17 @@
 
 // Create the directory to store the images.
 int CreateDirectory(std::string dirDest){
+	std::cout << "Been here 1" << std::endl;
     int mkdRet = mkdir(dirDest.c_str(), 0777);
     if (mkdRet == 0){
         std::cout << "The \"" << dirDest.c_str() << "\"is created successfully"
                   << std::endl;
+	std::cout << "Been here 2" << std::endl;
     }
     else{
         std::cout << "The folder \"" << dirDest.c_str()
                   << "\" couldn't be created." << std::endl;
+	std::cout << "Been here 3" << std::endl;
     }
 
 	return mkdRet;
@@ -56,7 +59,12 @@ std::string exec(const char* cmd) {
 void *StoreImages(void *ptr){
     ThreadData *inThData = (ThreadData *)ptr;
 	std::string destPath = inThData->dirDestination;	// Save destination path
-
+	std::string debugLogFileName = inThData->dirDestination + "/DebugLog.txt";
+ //    inThData->dbLog.open(debugLogFileName, std::ios::out|std::ios::app);   // Open time log file
+	// if (!inThData->dbLog.is_open()){
+	// 	std::cout << "Unable to open the debug file!!!!" << std::endl;
+	// }
+	// inThData->dbLog << "Been here 4" << std::endl;
     //std::cout << inThData->dirDestination.c_str() << std::endl; 
     int sockfd, portno, n = 0;
     socklen_t clilen;
@@ -97,7 +105,8 @@ void *StoreImages(void *ptr){
     clilen = sizeof(cli_addr);   // size of structure
     char buffer[MSG_SIZE];
     bzero(buffer,MSG_SIZE);
-
+	// inThData->dbLog << "Been here 5" << std::endl;
+	// inThData->dbLog.close();
     while (1){
         // TCP -- Blocks until a client connects to the server
         // newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
@@ -110,78 +119,118 @@ void *StoreImages(void *ptr){
         // n = read(newsockfd,buffer,MSG_SIZE-1); // recvfrom() could be used
 
         // UDP Style
-        n = recvfrom(sockfd, buffer, MSG_SIZE, 0, (struct sockaddr *)&cli_addr,
-                     &clilen);
-        if (n < 0)
+        n = recvfrom(sockfd, buffer, MSG_SIZE, 0, (struct sockaddr *)&cli_addr, &clilen);
+        char recvBytes[50];
+        sprintf(recvBytes, "%d", n);
+
+        // Open the DEBUG file
+     //    inThData->dbLog.open(debugLogFileName, std::ios::out|std::ios::app);   // Open time log file
+    	// if (!inThData->dbLog.is_open()){
+    	// 	std::cout << "Unable to open the debug file!!!!" << std::endl;
+    	// }
+     //    inThData->dbLog << "Been here 6" << std::endl;
+
+        if (n < 0){
             error("ERROR reading from socket");
-        std::cout << "Here is the message: %s\n" << buffer << std::endl;
+            // inThData->dbLog.close();
+        }
+
+        std::cout << "Here is the message: " << buffer << std::endl;
 
         // Check the message first.
         if (strncasecmp(buffer, "Start", 5) == 0){
             // Create a folder name, that is derived from the current date, and
-            // store it in given path name.
+            // store it in given path name
+	        // inThData->dbLog << "Been here 7" << std::endl;
             if(inThData->dirDestination != ""){
                 inThData->dirDestination = destPath + "/" + currentDateTime();
             }else{
                 inThData->dirDestination = currentDateTime();
             }
-            std::cout << "Image storing flag is " << inThData->store_Images
+         
+		    std::cout << "Image storing flag is " << inThData->store_Images
                       << std::endl;
+
             std::cout << "The folder name is " << inThData->dirDestination
                       << std::endl;
-            std::cout << "The frame count starts from - " << inThData->frameCount
+	        // inThData->dbLog << std::endl << inThData->dirDestination << std::endl;
+         
+	        std::cout << "The frame count starts from - " << inThData->frameCount
                       << std::endl;
-            
+           
+        	// inThData->dbLog << "Been here 8" << std::endl;
             // Folder creation -- If the folder creation fails then inform the
             // same to the GUI and don't set the store-image flag. Also open a 
             // file to store the time stamp of each image. If that fails then 
             // inform the same to the use.
 			int cd_ret = CreateDirectory(inThData->dirDestination);		
-            char timelogFileName[300];          // Time log file name
-            sprintf(timelogFileName, "%s/TimeLog.txt", 
-                    inThData->dirDestination.c_str());
-            inThData->fpTimeLog = fopen(timelogFileName, "w");   // Open time log file
+            char timelogFileName[400];          // Time log file name
+            sprintf(timelogFileName, "%s/TimeLog.txt", inThData->dirDestination.c_str());
+            inThData->fpTimeLog = fopen(timelogFileName, "w");   // Open time log fil
             if (inThData->fpTimeLog == NULL){
                 std::cout << "Unable to open the time log file" << std::endl;
             }
+
             bzero(buffer, MSG_SIZE);			// Clear the buffer before adding new message
 			if (cd_ret == 0 && inThData->fpTimeLog != NULL){
+                // inThData->dbLog << "Been here 10" << std::endl;
 				inThData->store_Images = true;	// Turn ON the storage flag
 				inThData->frameCount = 1;		// Start the image number from 1
 				strcpy(buffer, "Created folder -- ");
 				strcat(buffer, inThData->dirDestination.c_str());
+				strcat(buffer, "\nBytes received -  ");
+				strcat(buffer, recvBytes);
 			}else if(cd_ret != 0){
+                // inThData->dbLog << "Been here 11" << std::endl;
 				strcpy(buffer, "Unable to create a folder");
+				strcat(buffer, "\nBytes received -  ");
+				strcat(buffer, recvBytes);
 			}else{
                 strcpy(buffer, "Unable to create the time log file");
+				strcat(buffer, "\nBytes received -  ");
+				strcat(buffer, recvBytes);
             }
+
+            // inThData->dbLog.close();
+            
         }else if(strncasecmp(buffer, "Stop", 4) == 0){
-            fclose(inThData->fpTimeLog);         // Close the time log file
+            // inThData->dbLog << "Been here 12" << std::endl;
+            // inThData->dbLog << "Been here 12.1" << std::endl;
             inThData->store_Images = false;
+            // inThData->dbLog << "Been here 12.2" << std::endl;
+            fclose(inThData->fpTimeLog);         // Close the time log fil
+            
             std::cout << "Image storing flag is " << inThData->store_Images
                       << std::endl;
+            // inThData->dbLog << "Been here 12.3" << std::endl;
+            
             // Send an acknowledgement - Number of images grabbed for each type.
             bzero(buffer, MSG_SIZE);
             char sysCmd[200];
+            // inThData->dbLog << "Been here 12.4" << std::endl;
             sprintf(sysCmd, "ls %s/depth* | wc", inThData->dirDestination.c_str());
+            // inThData->dbLog << "Been here 12.5" << std::endl;
             std::string cmdOutput = exec(sysCmd);
+            // inThData->dbLog << "Been here 12.6" << std::endl;
             strcpy(buffer, "Image grabbing done.\n");
+            // inThData->dbLog << "Been here 12.7" << std::endl;
             strcat(buffer, "Total image saved for each type: ");
+            // inThData->dbLog << "Been here 12.8" << std::endl;
             strcat(buffer, cmdOutput.c_str());
+			strcat(buffer, "\nBytes received -  ");
+			strcat(buffer, recvBytes);
+
+            // inThData->dbLog << "Been here 12.9" << std::endl;
+            // inThData->dbLog.close();
         }else{
             // Send an error message.
             bzero(buffer, MSG_SIZE);
+            strcpy(buffer, recvBytes);
             strcpy(buffer, "The message should be either \"Start\" or \"Stop\"");
         }
 
-        // TCP way --- Send acknowledgement to the client
-        // n = write(newsockfd, buffer, strlen(buffer));
-        // close(newsockfd);
-        // signal(SIGCHLD,SIG_IGN);   // to avoid zombie problem
-
         // UPD way -- Send acknowledgement to the client
-        n = sendto(sockfd, buffer, strlen(buffer), 0,
-                   (struct sockaddr *)&cli_addr, clilen);
+        n = sendto(sockfd, buffer, strlen(buffer), 0, (struct sockaddr *)&cli_addr, clilen);
     }  // end of while
 
     close(sockfd);
